@@ -17,6 +17,7 @@
 #include <LGFX_AUTODETECT.hpp>
 
 static LGFX Lcd(128, 128);
+// static LGFX Lcd(320, 320);
 static LGFX_Sprite Screen(&Lcd);
 
 #define PIN_LEFT    39
@@ -34,37 +35,66 @@ struct Coordinate_t {
     int y;
 };
 
+enum MoveDirection {
+    MOVE_UP,
+    MOVE_DOWN,
+    MOVE_LEFT,
+    MOVE_RIGHT
+};
 
 
-static unsigned int SnakeBodyWidth = 6;
-std::vector<Coordinate_t> SnakeBodyList = {{10, 10}, {16, 10}, {22, 10}, {28, 10} ,{34, 10}};
+static unsigned int SnakeBodyWidth = 4;
+std::vector<Coordinate_t> SnakeBodyList;
+static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
+static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
 
 
 
 
 
 
-void SnakeMove(uint8_t direction)
+void SnakeMove()
 {
     Coordinate_t Coor_New = *SnakeBodyList.begin();
 
-    switch (direction)
+    // SnakeMoveDirection_old = SnakeMoveDirection;
+    if (((Coor_New.x + (SnakeBodyWidth / 2)) % SnakeBodyWidth) == 0)
     {
-        case 0:
-            Coor_New.y -= SnakeBodyWidth;
+        if (((Coor_New.y + (SnakeBodyWidth / 2)) % SnakeBodyWidth) == 0)
+            SnakeMoveDirection_old = SnakeMoveDirection;
+    }
+
+
+    switch (SnakeMoveDirection_old)
+    {
+        case MOVE_UP:
+            Coor_New.y -= 1;
             break;
-        case 1:
-            Coor_New.y += SnakeBodyWidth;
+        case MOVE_DOWN:
+            Coor_New.y += 1;
             break;
-        case 2:
-            Coor_New.x -= SnakeBodyWidth;
+        case MOVE_LEFT:
+            Coor_New.x -= 1;
             break;
-        case 3:
-            Coor_New.x += SnakeBodyWidth;
+        case MOVE_RIGHT:
+            Coor_New.x += 1;
             break;
         default:
             break;
     }
+
+
+    /* If hit wall */
+    if (Coor_New.x < 0)
+        Coor_New.x = Lcd.width();
+    if (Coor_New.y < 0)
+        Coor_New.y = Lcd.height();
+    if (Coor_New.x > Lcd.width())
+        Coor_New.x = 0;
+    if (Coor_New.y > Lcd.height())
+        Coor_New.y = 0;
+
+
 
     SnakeBodyList.insert(SnakeBodyList.begin(), Coor_New);
     SnakeBodyList.pop_back();
@@ -73,9 +103,11 @@ void SnakeMove(uint8_t direction)
 
 void SnakeGrow()
 {
-    SnakeBodyList.push_back(SnakeBodyList.back());
+    for (int i = 0; i < SnakeBodyWidth; i++)
+    {
+        SnakeBodyList.push_back(SnakeBodyList.back());
+    }
 }
-
 
 
 void SnakeScreenUpdate()
@@ -83,44 +115,70 @@ void SnakeScreenUpdate()
     for (auto i : SnakeBodyList)
     {
         // Screen.fillCircle(i.x, i.y, SnakeBodyWidth / 2, TFT_ORANGE);
-        Screen.fillRect(i.x - (SnakeBodyWidth / 2), i.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, TFT_ORANGE);
+        // Screen.fillRect(i.x - (SnakeBodyWidth / 2), i.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, TFT_ORANGE);
+        Screen.drawRect(i.x - (SnakeBodyWidth / 2), i.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, TFT_ORANGE);
     }
 }
+
+
 
 
 
 
 void InputUpdate()
 {
+    MoveDirection SnakeMoveDirection_New = SnakeMoveDirection;
+
     if (lgfx::gpio_in(PIN_LEFT) == 0)
     {
         std::cout << "L\n";
-        SnakeMove(2);
+        SnakeMoveDirection_New = MOVE_LEFT;
     }
-        
-
     else if (lgfx::gpio_in(PIN_RIGHT) == 0)
     {
         std::cout << "R\n";
-        SnakeMove(3);
+        SnakeMoveDirection_New = MOVE_RIGHT;
     }
-        
 
     else if (lgfx::gpio_in(PIN_UP) == 0)
     {
         std::cout << "U\n";
-        SnakeMove(0);
+        SnakeMoveDirection_New = MOVE_UP;
     }
-        
-
     else if (lgfx::gpio_in(PIN_DOWN) == 0)
     {
         std::cout << "D\n";
-        SnakeMove(1);
+        SnakeMoveDirection_New = MOVE_DOWN;
     }
-        
+
+
+    /* Direction lock */
+    switch (SnakeMoveDirection_New)
+    {
+        case MOVE_UP:
+            if (SnakeMoveDirection_old == MOVE_DOWN)
+                return;
+            break;
+        case MOVE_DOWN:
+            if (SnakeMoveDirection_old == MOVE_UP)
+                return;
+            break;
+        case MOVE_LEFT:
+            if (SnakeMoveDirection_old == MOVE_RIGHT)
+                return;
+            break;
+        case MOVE_RIGHT:
+            if (SnakeMoveDirection_old == MOVE_LEFT)
+                return;
+            break;
+        default:
+            break;
+    }
+    SnakeMoveDirection = SnakeMoveDirection_New;
 
 }
+
+
 
 
 
@@ -133,49 +191,39 @@ void setup()
     Screen.createSprite(Lcd.width(), Lcd.height());
 
 
-
+    SnakeBodyList.push_back({10, 10});
+    for (int i = 0; i < 10; i++)
+    {
+        SnakeGrow();
+    }
 
 }
 
 
-uint8_t ddd_list[] = {1, 3, 0, 2};
-uint8_t ddd = 0;
+uint32_t Time_Snake = 0;
+uint32_t Time_Input = 0;
+
 
 void loop()
 {
-
-    // SnakeMove(1);
-    // Screen.clear();
-    // SnakeScreenUpdate();
-    // Screen.pushSprite(0, 0);
-
-
-    // SDL_Delay(1000);
-
-
-
-
-
-
-
-    for (int i = 0; i < 16; i++)
+    Time_Snake++;
+    if (Time_Snake > 8)
     {
-        
-        // SnakeMove(ddd_list[ddd]);
-        SnakeScreenUpdate();
-
-
-        InputUpdate();
-
-
-        Screen.pushSprite(0, 0);
-        // SDL_Delay(100);
-        SDL_Delay(50);
+        Time_Snake = 0;
+        SnakeMove();
         Screen.clear();
+        SnakeScreenUpdate();
+        Screen.pushSprite(0, 0);
     }
 
+    // Time_Input++;
+    // if (Time_Input > 8)
+    // {
+    //     Time_Input = 0;
+    //     InputUpdate();
+    // }
+    InputUpdate();
 
-    ddd++;
-    if (ddd > 3)
-        ddd = 0;
+
+    SDL_Delay(1);
 }
