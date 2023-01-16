@@ -9,10 +9,10 @@
  *
  */
 #include <iostream>
+
 #define LGFX_USE_V1
 #include <LovyanGFX.hpp>
 #include <LGFX_AUTODETECT.hpp>
-
 
 static LGFX Lcd(320, 240);
 static LGFX_Sprite Screen(&Lcd);
@@ -33,8 +33,16 @@ static int shit = 0;
 
 void loop()
 {
-    Screen.printf("??? %d\n", shit++);
-    Screen.pushSprite(0, 0);
+    Lcd.fillScreen(TFT_RED);
+    std::cout << "RED\n";
+    SDL_Delay(1000);
+
+    Lcd.fillScreen(TFT_GREEN);
+    std::cout << "GREEN\n";
+    SDL_Delay(1000);
+
+    Lcd.fillScreen(TFT_BLUE);
+    std::cout << "BLUE\n";
     SDL_Delay(1000);
 }
 
