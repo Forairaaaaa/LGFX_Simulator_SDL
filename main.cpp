@@ -16,8 +16,8 @@
 #include <LovyanGFX.hpp>
 #include <LGFX_AUTODETECT.hpp>
 
-static LGFX Lcd(128, 128);
-// static LGFX Lcd(320, 320);
+// static LGFX Lcd(128, 128);
+static LGFX Lcd(320, 240);
 static LGFX_Sprite Screen(&Lcd);
 
 #define PIN_LEFT    39
@@ -62,7 +62,7 @@ enum MoveDirection {
 };
 
 
-static unsigned int SnakeBodyWidth = 8;
+static unsigned int SnakeBodyWidth = 16;
 std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)}};
 static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
 static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
@@ -278,9 +278,12 @@ void Check_EatFood()
 
 void GameOver()
 {
+    Screen.fillRoundRect(0, SnakeBodyWidth * 2, Lcd.width(), Lcd.height() - (SnakeBodyWidth * 4), SnakeBodyWidth / 2, BG_GRID_COLOR);
     Screen.setTextSize(1.6);
-    Screen.printf("\n :(\n");
-    Screen.printf(" Press XXX\n Restart");
+    Screen.setTextColor(TFT_WHITE, BG_GRID_COLOR);
+    Screen.setCursor(SnakeBodyWidth * 2, SnakeBodyWidth * 2);
+    Screen.printf("\n\n  :(\n");
+    Screen.printf("  Press ->\n  Restart");
     Screen.pushSprite(0, 0);
 
     while (1)
@@ -345,6 +348,9 @@ void setup()
 
     /* Update first food */
     FoodUpdate();
+
+
+    // GameOver();
 }
 
 
@@ -358,7 +364,7 @@ void loop()
 
 
     Time_Snake++;
-    if (Time_Snake > 10)
+    if (Time_Snake > 5)
     {
         Time_Snake = 0;
 
