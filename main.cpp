@@ -203,24 +203,6 @@ uint32_t Food_UpdateTime_old = 0;
 
 void FoodUpdate()
 {
-    /* Get random coordinante */
-    // Food_coor.x = random(0 + (SnakeBodyWidth / 2), Lcd.width() - (SnakeBodyWidth / 2));
-    // Food_coor.y = random(0 + (SnakeBodyWidth / 2), Lcd.height() - (SnakeBodyWidth / 2));
-
-    // if (((Food_coor.x + (SnakeBodyWidth / 2)) % SnakeBodyWidth) == 0)
-    // {
-    //     if (((Food_coor.y + (SnakeBodyWidth / 2)) % SnakeBodyWidth) == 0)
-            
-    // }
-
-    // do {
-    //     Food_coor.x = random(0 + (SnakeBodyWidth / 2), Lcd.width() - (SnakeBodyWidth / 2));
-    // } while (((Food_coor.x + (SnakeBodyWidth / 2)) % SnakeBodyWidth) != 0);
-    // do {
-    //     Food_coor.y = random(0 + (SnakeBodyWidth / 2), Lcd.height() - (SnakeBodyWidth / 2));
-    // } while (((Food_coor.y + (SnakeBodyWidth / 2)) % SnakeBodyWidth) != 0);
-
-
     /* Get a random Y */
     while (1)
     {
@@ -263,15 +245,10 @@ void FoodUpdate()
 
 void FoodScreenUpdate()
 {
-    // Screen.fillRect(Food_coor.x - (SnakeBodyWidth / 2), Food_coor.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, FOOD_COLOR);
-    // Screen.fillRoundRect(Food_coor.x - (SnakeBodyWidth / 2), Food_coor.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, 1, FOOD_COLOR);
-
-
 
     Screen.fillRoundRect(Food_coor.x - (Food_Size / 2), Food_coor.y - (Food_Size / 2), Food_Size, Food_Size, 1, FOOD_COLOR);
 
-
-    /* Food row up */
+    /* Food grow up */
     if (Food_UpdateTime_old == 0)
         Food_UpdateTime_old = SDL_GetTicks();
     else
@@ -283,9 +260,6 @@ void FoodScreenUpdate()
                 Food_Size++;
         }
     }
-
-
-    
 }
 
 
@@ -302,12 +276,43 @@ void Check_EatFood()
 }
 
 
+void GameOver()
+{
+    Screen.setTextSize(1.6);
+    Screen.printf("\n :(\n");
+    Screen.printf(" Press XXX\n Restart");
+    Screen.pushSprite(0, 0);
+
+    while (1)
+    {
+        // if (lgfx::gpio_in(PIN_RIGHT) == 0)
+
+        SDL_Delay(100);
+    }
+}
+
+
+
+void Check_EatItself()
+{
+    /* ***Check bug, not yet figured out */
+    if (SnakeBodyList.size() < (3 * (SnakeBodyWidth / 2)))
+        return;
+
+    Coordinate_t Coor_Head = *SnakeBodyList.begin();
+
+    for (auto i = SnakeBodyList.begin() + 1; i <= SnakeBodyList.end(); i++)
+    {
+        if ((Coor_Head.x == i->x) && (Coor_Head.y == i->y))
+        {
+            GameOver();
+        }
+    }
+}
 
 
 void BackGroudScreenUpdate()
 {
-
-
     /* Draw grid */
     for (int x = -(SnakeBodyWidth / 2) - 1; x < Lcd.width(); x += SnakeBodyWidth)
     {
@@ -316,34 +321,11 @@ void BackGroudScreenUpdate()
             Screen.drawPixel(x, y, BG_GRID_COLOR);
         }
     }
-
-    // /* Draw frame */
-//     Screen.drawRect(0, 0, Lcd.width(), Lcd.height(), BG_FRAME_COLOR);
-//     Screen.drawRect(3, 3, Lcd.width() - 6, Lcd.height() - 6, BG_FRAME_COLOR);
-//     Screen.floodFill(1, 1, BG_FRAME_COLOR);
 }
 
 
 void IndicatorScreenUpdate()
 {
-    // switch (SnakeMoveDirection)
-    // {
-    //     case MOVE_UP:
-    //         Screen.fillRoundRect((Lcd.width() / 4), -2, (Lcd.width() / 2), 4, 1, INDICATOR_COLOR);
-    //         break;
-    //     case MOVE_DOWN:
-    //         Screen.fillRoundRect((Lcd.width() / 4), Lcd.height() - 2, (Lcd.width() / 2), 4, 1, INDICATOR_COLOR);
-    //         break;
-    //     case MOVE_LEFT:
-    //         Screen.fillRoundRect(-2, (Lcd.height() / 4), 4, (Lcd.height() / 2), 1, INDICATOR_COLOR);
-    //         break;
-    //     case MOVE_RIGHT:
-    //         Screen.fillRoundRect(Lcd.width() - 2, (Lcd.height() / 4), 4, (Lcd.height() / 2), 1, INDICATOR_COLOR);
-    //         break;
-    //     default:
-    //         break;
-    // }
-
     Screen.fillRoundRect((Lcd.width() / 4), -2, (Lcd.width() / 2), 4, 1, 
                         SnakeMoveDirection == MOVE_UP ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
     Screen.fillRoundRect((Lcd.width() / 4), Lcd.height() - 2, (Lcd.width() / 2), 4, 1,
@@ -352,7 +334,6 @@ void IndicatorScreenUpdate()
                         SnakeMoveDirection == MOVE_LEFT ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
     Screen.fillRoundRect(Lcd.width() - 2, (Lcd.height() / 4), 4, (Lcd.height() / 2), 1, 
                         SnakeMoveDirection == MOVE_RIGHT ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
-
 }
 
 
@@ -360,13 +341,6 @@ void setup()
 {
     Lcd.init();
     Screen.createSprite(Lcd.width(), Lcd.height());
-
-    // int StartCoor = (int)(SnakeBodyWidth + SnakeBodyWidth / 2);
-    // SnakeBodyList.push_back({StartCoor, StartCoor});
-    // for (int i = 0; i < 1; i++)
-    // {
-    //     SnakeGrow();
-    // }
 
 
     /* Update first food */
@@ -390,6 +364,7 @@ void loop()
 
         SnakeMove();
         Check_EatFood();
+        Check_EatItself();
 
         Screen.clear();
         BackGroudScreenUpdate();
