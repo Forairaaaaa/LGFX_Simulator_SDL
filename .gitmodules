@@ -1,0 +1,3 @@
+[submodule "Lib/LovyanGFX"]
+	path = Lib/LovyanGFX
+	url = https://github.com/lovyan03/LovyanGFX.git
