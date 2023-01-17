@@ -270,6 +270,7 @@ void Check_EatFood()
     {
         if ((Food_coor.x == i.x) && (Food_coor.y == i.y))
         {
+            SnakeScore++;
             SnakeGrow();
             FoodUpdate();
         }
@@ -362,7 +363,7 @@ void setup()
     FoodUpdate();
 
 
-    GameOver();
+    // GameOver();
 }
 
 
