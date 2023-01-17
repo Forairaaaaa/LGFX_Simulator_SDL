@@ -64,7 +64,6 @@ enum MoveDirection {
 
 
 static unsigned int SnakeBodyWidth = 16;
-// std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)}};
 std::vector<Coordinate_t> SnakeBodyList;
 static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
 static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
@@ -197,7 +196,6 @@ void FoodUpdate()
 
 void FoodScreenUpdate()
 {
-
     Screen.fillRoundRect(Food_coor.x - (Food_Size / 2), Food_coor.y - (Food_Size / 2), Food_Size, Food_Size, 1, FOOD_COLOR);
 
     /* Food grow up */
@@ -397,28 +395,21 @@ void setup()
 
 
     GameReset();
-
-    /* Update first food */
-    // FoodUpdate();
-
-
-    // GameOver();
 }
 
 
 uint32_t Time_Snake = 0;
-uint32_t Time_Input = 0;
+// uint32_t Time_Input = 0;
 
 
 void loop()
 {
-    
-
-
-    Time_Snake++;
-    if (Time_Snake > 5)
+    /* Frame update */
+    if (Time_Snake == 0)
+        Time_Snake = SDL_GetTicks();
+    else if ((SDL_GetTicks() - Time_Snake) > 5)
     {
-        Time_Snake = 0;
+        Time_Snake = SDL_GetTicks();
 
         SnakeMove();
         Check_EatFood();
@@ -433,22 +424,6 @@ void loop()
         Screen.pushSprite(0, 0);
     }
 
-    
-
-
-
-    // Time_Input++;
-    // if (Time_Input > 1000)
-    // {
-    //     Time_Input = 0;
-    //     // InputUpdate();
-    //     FoodUpdate();
-    // }
+    /* Input update */
     InputUpdate();
-
-
-
-
-    
-    SDL_Delay(1);
 }
