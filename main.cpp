@@ -69,6 +69,8 @@ static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
 static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
 static Coordinate_t Food_coor = {0, 0};
 static unsigned int SnakeScore = 0;
+static uint8_t Food_Size = 0;
+static uint32_t Food_UpdateTime_old = 0;
 
 void GameOver();
 
@@ -143,15 +145,6 @@ void SnakeScreenUpdate()
 
 
 
-
-
-
-
-
-
-uint8_t Food_Size = 0;
-uint32_t Food_UpdateTime_old = 0;
-
 void FoodUpdate()
 {
     /* Get a random Y */
@@ -169,7 +162,6 @@ void FoodUpdate()
         }
         break;
     }
-
     /* Get a random Y */
     while (1)
     {
@@ -185,12 +177,9 @@ void FoodUpdate()
         }
         break;
     }
-
-
+    /* Resize food */
     Food_Size = 0;
-
-    std::cout << "(" << Food_coor.x << "," << Food_coor.y << ")\n";
-
+    // std::cout << "(" << Food_coor.x << "," << Food_coor.y << ")\n";
 }
 
 
@@ -234,7 +223,6 @@ void Check_EatItself()
         return;
 
     Coordinate_t Coor_Head = *SnakeBodyList.begin();
-
     for (auto i = SnakeBodyList.begin() + 1; i <= SnakeBodyList.end(); i++)
     {
         if ((Coor_Head.x == i->x) && (Coor_Head.y == i->y))
@@ -257,27 +245,6 @@ void BackGroudScreenUpdate()
     }
 }
 
-
-void IndicatorScreenUpdate()
-{
-    Screen.fillRoundRect((Lcd.width() / 4), -2, (Lcd.width() / 2), 4, 1, 
-                        SnakeMoveDirection == MOVE_UP ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
-    Screen.fillRoundRect((Lcd.width() / 4), Lcd.height() - 2, (Lcd.width() / 2), 4, 1,
-                        SnakeMoveDirection == MOVE_DOWN ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
-    Screen.fillRoundRect(-2, (Lcd.height() / 4), 4, (Lcd.height() / 2), 1, 
-                        SnakeMoveDirection == MOVE_LEFT ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
-    Screen.fillRoundRect(Lcd.width() - 2, (Lcd.height() / 4), 4, (Lcd.height() / 2), 1, 
-                        SnakeMoveDirection == MOVE_RIGHT ? INDICATOR_COLOR_ACTIVE : INDICATOR_COLOR_DISABLE);
-}
-
-
-
-// static unsigned int SnakeBodyWidth = 16;
-// std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)}};
-// static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
-// static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
-// static Coordinate_t Food_coor = {0, 0};
-// static unsigned int SnakeScore = 0;
 
 void GameReset()
 {
@@ -335,54 +302,30 @@ void GameOver()
 
 void InputUpdate()
 {
-    MoveDirection SnakeMoveDirection_New = SnakeMoveDirection;
-
     if (lgfx::gpio_in(PIN_LEFT) == 0)
     {
-        // std::cout << "L\n";
-        SnakeMoveDirection_New = MOVE_LEFT;
+        if (SnakeMoveDirection_old == MOVE_RIGHT)
+            return;
+        SnakeMoveDirection = MOVE_LEFT;
     }
     else if (lgfx::gpio_in(PIN_RIGHT) == 0)
     {
-        // std::cout << "R\n";
-        SnakeMoveDirection_New = MOVE_RIGHT;
+        if (SnakeMoveDirection_old == MOVE_LEFT)
+            return;
+        SnakeMoveDirection = MOVE_RIGHT;
     }
-
     else if (lgfx::gpio_in(PIN_UP) == 0)
     {
-        // std::cout << "U\n";
-        SnakeMoveDirection_New = MOVE_UP;
+        if (SnakeMoveDirection_old == MOVE_DOWN)
+            return;
+        SnakeMoveDirection = MOVE_UP;
     }
     else if (lgfx::gpio_in(PIN_DOWN) == 0)
     {
-        // std::cout << "D\n";
-        SnakeMoveDirection_New = MOVE_DOWN;
+        if (SnakeMoveDirection_old == MOVE_UP)
+            return;
+        SnakeMoveDirection = MOVE_DOWN;
     }
-
-
-    /* Direction lock */
-    switch (SnakeMoveDirection_New)
-    {
-        case MOVE_UP:
-            if (SnakeMoveDirection_old == MOVE_DOWN)
-                return;
-            break;
-        case MOVE_DOWN:
-            if (SnakeMoveDirection_old == MOVE_UP)
-                return;
-            break;
-        case MOVE_LEFT:
-            if (SnakeMoveDirection_old == MOVE_RIGHT)
-                return;
-            break;
-        case MOVE_RIGHT:
-            if (SnakeMoveDirection_old == MOVE_LEFT)
-                return;
-            break;
-        default:
-            break;
-    }
-    SnakeMoveDirection = SnakeMoveDirection_New;
 }
 
 
@@ -398,9 +341,8 @@ void setup()
 }
 
 
-uint32_t Time_Snake = 0;
-// uint32_t Time_Input = 0;
 
+uint32_t Time_Snake = 0;
 
 void loop()
 {
@@ -419,7 +361,6 @@ void loop()
         BackGroudScreenUpdate();
         FoodScreenUpdate();
         SnakeScreenUpdate();
-        // IndicatorScreenUpdate();
 
         Screen.pushSprite(0, 0);
     }
