@@ -16,8 +16,9 @@
 #include <LovyanGFX.hpp>
 #include <LGFX_AUTODETECT.hpp>
 
-// static LGFX Lcd(128, 128);
-static LGFX Lcd(320, 240);
+static LGFX Lcd(128, 128);
+// static LGFX Lcd(320, 240);
+// static LGFX Lcd(1080, 720);
 static LGFX_Sprite Screen(&Lcd);
 
 #define PIN_LEFT    39
@@ -67,7 +68,7 @@ std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidt
 static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
 static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
 static Coordinate_t Food_coor = {0, 0};
-
+static unsigned int SnakeScore = 0;
 
 
 
@@ -278,13 +279,24 @@ void Check_EatFood()
 
 void GameOver()
 {
-    Screen.fillRoundRect(0, SnakeBodyWidth * 2, Lcd.width(), Lcd.height() - (SnakeBodyWidth * 4), SnakeBodyWidth / 2, BG_GRID_COLOR);
-    Screen.setTextSize(1.6);
+    /* Draw dialog framwork */
+    Screen.fillRoundRect(Lcd.width() / 12 + 3, Lcd.height() / 10 + 3, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, 0x443454U);
+    Screen.fillRoundRect(Lcd.width() / 12, Lcd.height() / 10, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, BG_GRID_COLOR);
+    
+    char TextBuff[10];
+    Screen.setFont(&fonts::Font8x8C64);
+    Screen.setTextDatum(top_centre);
     Screen.setTextColor(TFT_WHITE, BG_GRID_COLOR);
-    Screen.setCursor(SnakeBodyWidth * 2, SnakeBodyWidth * 2);
-    Screen.printf("\n\n  :(\n");
-    Screen.printf("  Press ->\n  Restart");
+    Screen.setTextSize(Lcd.width() / 42);
+    snprintf(TextBuff, sizeof(TextBuff), "%d", SnakeScore);
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
+    Screen.setTextSize(Lcd.width() / 128);
+    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
+
     Screen.pushSprite(0, 0);
+
+
 
     while (1)
     {
@@ -350,7 +362,7 @@ void setup()
     FoodUpdate();
 
 
-    // GameOver();
+    GameOver();
 }
 
 
