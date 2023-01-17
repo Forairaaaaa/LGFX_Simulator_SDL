@@ -28,7 +28,7 @@ static LGFX_Sprite Screen(&Lcd);
 
 std::random_device rd;
 std::mt19937 gen(rd());
-int random(int low, int high)
+int Game_random(int low, int high)
 {
     std::uniform_int_distribution<> dist(low, high);
     return dist(gen);
@@ -56,7 +56,7 @@ struct Coordinate_t {
     int y;
 };
 
-enum MoveDirection {
+enum MoveDirection_t {
     MOVE_UP,
     MOVE_DOWN,
     MOVE_LEFT,
@@ -65,17 +65,19 @@ enum MoveDirection {
 
 static unsigned int Snake_BodyWidth = SNAKE_BODY_WIDTH;
 std::vector<Coordinate_t> Snake_BodyList;
-static MoveDirection Snake_MoveDirection = MOVE_RIGHT;
-static MoveDirection Snake_MoveDirection_Old = MOVE_RIGHT;
+static MoveDirection_t Snake_MoveDirection = MOVE_RIGHT;
+static MoveDirection_t Snake_MoveDirection_Old = MOVE_RIGHT;
 static Coordinate_t Food_Coor = {0, 0};
 static uint8_t Food_Size = 0;
 static uint32_t Food_UpdateTime_Old = 0;
 static uint32_t Game_UpdateTime_LastFrame = 0;
 static unsigned int Game_Score = 0;
 
-void Game_Input_Update();
+
 void Game_Reset();
 void Game_Over();
+void Game_Input_Update();
+void Game_Input_Update_Callback(MoveDirection_t &MoveDirection);
 void Game_Over_Callback();
 void Game_Snake_Move();
 void Game_Snake_Grow();
@@ -118,44 +120,28 @@ void loop()
         Screen.pushSprite(0, 0);
     }
 
-    /* Input update */
     Game_Input_Update();
 }
 
 
-
-void Game_Input_Update()
+void Game_Input_Update_Callback(MoveDirection_t &MoveDirection)
 {
+    /* Change moving direction, e.g. MoveDirection = MOVE_RIGHT */
+
     if (lgfx::gpio_in(PIN_LEFT) == 0)
-    {
-        if (Snake_MoveDirection_Old == MOVE_RIGHT)
-            return;
-        Snake_MoveDirection = MOVE_LEFT;
-    }
+        MoveDirection = MOVE_LEFT;
     else if (lgfx::gpio_in(PIN_RIGHT) == 0)
-    {
-        if (Snake_MoveDirection_Old == MOVE_LEFT)
-            return;
-        Snake_MoveDirection = MOVE_RIGHT;
-    }
+        MoveDirection = MOVE_RIGHT;
     else if (lgfx::gpio_in(PIN_UP) == 0)
-    {
-        if (Snake_MoveDirection_Old == MOVE_DOWN)
-            return;
-        Snake_MoveDirection = MOVE_UP;
-    }
+        MoveDirection = MOVE_UP;
     else if (lgfx::gpio_in(PIN_DOWN) == 0)
-    {
-        if (Snake_MoveDirection_Old == MOVE_UP)
-            return;
-        Snake_MoveDirection = MOVE_DOWN;
-    }
+        MoveDirection = MOVE_DOWN;
 }
 
 
 void Game_Over_Callback()
 {
-    /* Wait reset condition */
+    /* Call return to reset game */
     int PressTime_Count = 0;
     while (1)
     {
@@ -163,16 +149,14 @@ void Game_Over_Callback()
         {
             PressTime_Count++;
             if (PressTime_Count > 30)
-            {
-                Game_Reset();
-                break;
-            }
+                return;
         }
         else 
             PressTime_Count = 0;
         SDL_Delay(10);
     }
 }
+
 
 
 void Game_Reset()
@@ -209,6 +193,38 @@ void Game_Over()
     Screen.pushSprite(0, 0);
 
     Game_Over_Callback();
+    Game_Reset();
+}
+
+
+void Game_Input_Update()
+{
+    MoveDirection_t Snake_MoveDirection_New = Snake_MoveDirection;
+    Game_Input_Update_Callback(Snake_MoveDirection_New);
+    
+    /* No backward */
+    switch (Snake_MoveDirection_New)
+    {
+        case MOVE_UP:
+            if (Snake_MoveDirection_Old == MOVE_DOWN)
+                return;
+            break;
+        case MOVE_DOWN:
+            if (Snake_MoveDirection_Old == MOVE_UP)
+                return;
+            break;
+        case MOVE_LEFT:
+            if (Snake_MoveDirection_Old == MOVE_RIGHT)
+                return;
+            break;
+        case MOVE_RIGHT:
+            if (Snake_MoveDirection_Old == MOVE_LEFT)
+                return;
+            break;
+        default:
+            return;
+    }
+    Snake_MoveDirection = Snake_MoveDirection_New;
 }
 
 
@@ -279,7 +295,7 @@ void Game_Food_Update()
     /* Get a random Y */
     while (1)
     {
-        Food_Coor.x = random(0 + (Snake_BodyWidth / 2), Lcd.width() - (Snake_BodyWidth / 2));
+        Food_Coor.x = Game_random(0 + (Snake_BodyWidth / 2), Lcd.width() - (Snake_BodyWidth / 2));
         /* Check if fit grid */
         if (((Food_Coor.x + (Snake_BodyWidth / 2)) % Snake_BodyWidth) != 0)
             continue;
@@ -294,7 +310,7 @@ void Game_Food_Update()
     /* Get a random Y */
     while (1)
     {
-        Food_Coor.y = random(0 + (Snake_BodyWidth / 2), Lcd.height() - (Snake_BodyWidth / 2));
+        Food_Coor.y = Game_random(0 + (Snake_BodyWidth / 2), Lcd.height() - (Snake_BodyWidth / 2));
         /* Check if fit grid */
         if (((Food_Coor.y + (Snake_BodyWidth / 2)) % Snake_BodyWidth) != 0)
             continue;
