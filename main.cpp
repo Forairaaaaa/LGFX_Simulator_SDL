@@ -64,12 +64,14 @@ enum MoveDirection {
 
 
 static unsigned int SnakeBodyWidth = 16;
-std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)}};
+// std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)}};
+std::vector<Coordinate_t> SnakeBodyList;
 static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
 static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
 static Coordinate_t Food_coor = {0, 0};
 static unsigned int SnakeScore = 0;
 
+void GameOver();
 
 
 
@@ -144,58 +146,7 @@ void SnakeScreenUpdate()
 
 
 
-void InputUpdate()
-{
-    MoveDirection SnakeMoveDirection_New = SnakeMoveDirection;
 
-    if (lgfx::gpio_in(PIN_LEFT) == 0)
-    {
-        // std::cout << "L\n";
-        SnakeMoveDirection_New = MOVE_LEFT;
-    }
-    else if (lgfx::gpio_in(PIN_RIGHT) == 0)
-    {
-        // std::cout << "R\n";
-        SnakeMoveDirection_New = MOVE_RIGHT;
-    }
-
-    else if (lgfx::gpio_in(PIN_UP) == 0)
-    {
-        // std::cout << "U\n";
-        SnakeMoveDirection_New = MOVE_UP;
-    }
-    else if (lgfx::gpio_in(PIN_DOWN) == 0)
-    {
-        // std::cout << "D\n";
-        SnakeMoveDirection_New = MOVE_DOWN;
-    }
-
-
-    /* Direction lock */
-    switch (SnakeMoveDirection_New)
-    {
-        case MOVE_UP:
-            if (SnakeMoveDirection_old == MOVE_DOWN)
-                return;
-            break;
-        case MOVE_DOWN:
-            if (SnakeMoveDirection_old == MOVE_UP)
-                return;
-            break;
-        case MOVE_LEFT:
-            if (SnakeMoveDirection_old == MOVE_RIGHT)
-                return;
-            break;
-        case MOVE_RIGHT:
-            if (SnakeMoveDirection_old == MOVE_LEFT)
-                return;
-            break;
-        default:
-            break;
-    }
-    SnakeMoveDirection = SnakeMoveDirection_New;
-
-}
 
 
 
@@ -278,37 +229,6 @@ void Check_EatFood()
 }
 
 
-void GameOver()
-{
-    /* Draw dialog framwork */
-    Screen.fillRoundRect(Lcd.width() / 12 + 3, Lcd.height() / 10 + 3, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, 0x443454U);
-    Screen.fillRoundRect(Lcd.width() / 12, Lcd.height() / 10, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, BG_GRID_COLOR);
-    
-    char TextBuff[10];
-    Screen.setFont(&fonts::Font8x8C64);
-    Screen.setTextDatum(top_centre);
-    Screen.setTextColor(TFT_WHITE, BG_GRID_COLOR);
-    Screen.setTextSize(Lcd.width() / 42);
-    snprintf(TextBuff, sizeof(TextBuff), "%d", SnakeScore);
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
-    Screen.setTextSize(Lcd.width() / 128);
-    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
-
-    Screen.pushSprite(0, 0);
-
-
-
-    while (1)
-    {
-        // if (lgfx::gpio_in(PIN_RIGHT) == 0)
-
-        SDL_Delay(100);
-    }
-}
-
-
-
 void Check_EatItself()
 {
     /* ***Check bug, not yet figured out */
@@ -353,14 +273,133 @@ void IndicatorScreenUpdate()
 }
 
 
+
+// static unsigned int SnakeBodyWidth = 16;
+// std::vector<Coordinate_t> SnakeBodyList = {{(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)}};
+// static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
+// static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
+// static Coordinate_t Food_coor = {0, 0};
+// static unsigned int SnakeScore = 0;
+
+void GameReset()
+{
+    SnakeBodyList.clear();
+    SnakeBodyList.push_back({(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)});
+
+    SnakeMoveDirection = MOVE_RIGHT;
+    SnakeMoveDirection_old = MOVE_RIGHT;
+
+    SnakeScore = 0;
+
+    FoodUpdate();
+}
+
+
+void GameOver()
+{
+    /* Draw dialog framwork */
+    Screen.fillRoundRect(Lcd.width() / 12 + 3, Lcd.height() / 10 + 3, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, 0x443454U);
+    Screen.fillRoundRect(Lcd.width() / 12, Lcd.height() / 10, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, BG_GRID_COLOR);
+    
+    char TextBuff[10];
+    Screen.setFont(&fonts::Font8x8C64);
+    Screen.setTextDatum(top_centre);
+    Screen.setTextColor(TFT_WHITE, BG_GRID_COLOR);
+    Screen.setTextSize(Lcd.width() / 42);
+    snprintf(TextBuff, sizeof(TextBuff), "%d", SnakeScore);
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
+    Screen.setTextSize(Lcd.width() / 128);
+    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
+
+    Screen.pushSprite(0, 0);
+
+
+    /* Wait reset condition */
+    int PressTime_Count = 0;
+    while (1)
+    {
+        if (!lgfx::gpio_in(PIN_RIGHT))
+        {
+            PressTime_Count++;
+            if (PressTime_Count > 30)
+            {
+                GameReset();
+                break;
+            }
+        }
+        else 
+            PressTime_Count = 0;
+        SDL_Delay(10);
+    }
+}
+
+
+void InputUpdate()
+{
+    MoveDirection SnakeMoveDirection_New = SnakeMoveDirection;
+
+    if (lgfx::gpio_in(PIN_LEFT) == 0)
+    {
+        // std::cout << "L\n";
+        SnakeMoveDirection_New = MOVE_LEFT;
+    }
+    else if (lgfx::gpio_in(PIN_RIGHT) == 0)
+    {
+        // std::cout << "R\n";
+        SnakeMoveDirection_New = MOVE_RIGHT;
+    }
+
+    else if (lgfx::gpio_in(PIN_UP) == 0)
+    {
+        // std::cout << "U\n";
+        SnakeMoveDirection_New = MOVE_UP;
+    }
+    else if (lgfx::gpio_in(PIN_DOWN) == 0)
+    {
+        // std::cout << "D\n";
+        SnakeMoveDirection_New = MOVE_DOWN;
+    }
+
+
+    /* Direction lock */
+    switch (SnakeMoveDirection_New)
+    {
+        case MOVE_UP:
+            if (SnakeMoveDirection_old == MOVE_DOWN)
+                return;
+            break;
+        case MOVE_DOWN:
+            if (SnakeMoveDirection_old == MOVE_UP)
+                return;
+            break;
+        case MOVE_LEFT:
+            if (SnakeMoveDirection_old == MOVE_RIGHT)
+                return;
+            break;
+        case MOVE_RIGHT:
+            if (SnakeMoveDirection_old == MOVE_LEFT)
+                return;
+            break;
+        default:
+            break;
+    }
+    SnakeMoveDirection = SnakeMoveDirection_New;
+}
+
+
+
+
 void setup()
 {
     Lcd.init();
     Screen.createSprite(Lcd.width(), Lcd.height());
 
 
+    GameReset();
+
     /* Update first food */
-    FoodUpdate();
+    // FoodUpdate();
 
 
     // GameOver();
