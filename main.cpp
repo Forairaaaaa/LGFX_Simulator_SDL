@@ -38,17 +38,18 @@ int random(int low, int high)
 
 
 
+/* Game config */
+#define SNAKE_BODY_WIDTH        16
+#define GAME_UPDATE_INTERVAL    10
+#define COLOR_SNAKE             0xff8153U
+#define COLOR_SNAKE_SHADOW      0Xb55f3cU
+#define COLOR_FOOD              0x88d35eU
+#define COLOR_FOOD_SHADOW       0x5d8c3dU
+#define COLOR_BG_GRID           0x61497eU
+#define COLOR_BG_FRAME          0x61497eU
+#define COLOR_BG_DIALOG         0x61497eU
+#define COLOR_BG_DIALOG_SHADOW  0x443454U
 
-
-
-
-
-#define SNAKE_COLOR             0xff8153U
-#define FOOD_COLOR              0x88d35eU
-#define BG_GRID_COLOR           0x61497eU
-#define BG_FRAME_COLOR          0x61497eU
-#define INDICATOR_COLOR_ACTIVE  0x88d35eU
-#define INDICATOR_COLOR_DISABLE 0x61497eU
 
 struct Coordinate_t {
     int x;
@@ -62,33 +63,167 @@ enum MoveDirection {
     MOVE_RIGHT
 };
 
-
-static unsigned int SnakeBodyWidth = 16;
-std::vector<Coordinate_t> SnakeBodyList;
-static MoveDirection SnakeMoveDirection = MOVE_RIGHT;
-static MoveDirection SnakeMoveDirection_old = MOVE_RIGHT;
-static Coordinate_t Food_coor = {0, 0};
-static unsigned int SnakeScore = 0;
+static unsigned int Snake_BodyWidth = SNAKE_BODY_WIDTH;
+std::vector<Coordinate_t> Snake_BodyList;
+static MoveDirection Snake_MoveDirection = MOVE_RIGHT;
+static MoveDirection Snake_MoveDirection_Old = MOVE_RIGHT;
+static Coordinate_t Food_Coor = {0, 0};
 static uint8_t Food_Size = 0;
-static uint32_t Food_UpdateTime_old = 0;
+static uint32_t Food_UpdateTime_Old = 0;
+static uint32_t Game_UpdateTime_LastFrame = 0;
+static unsigned int Game_Score = 0;
 
-void GameOver();
+void Game_Input_Update();
+void Game_Reset();
+void Game_Over();
+void Game_Over_Callback();
+void Game_Snake_Move();
+void Game_Snake_Grow();
+void Game_Food_Update();
+void Game_Render_Snake();
+void Game_Render_BackGround();
+void Game_Render_Food();
+void Game_Check_EatFood();
+void Game_Check_EatMyself();
 
 
 
-void SnakeMove()
+void setup()
 {
-    Coordinate_t Coor_New = *SnakeBodyList.begin();
+    Lcd.init();
+    Screen.createSprite(Lcd.width(), Lcd.height());
 
-    // SnakeMoveDirection_old = SnakeMoveDirection;
-    if (((Coor_New.x + (SnakeBodyWidth / 2)) % SnakeBodyWidth) == 0)
+    /* Game init */
+    Game_Reset();
+}
+
+
+void loop()
+{
+    /* Frame update */
+    if (Game_UpdateTime_LastFrame == 0)
+        Game_UpdateTime_LastFrame = SDL_GetTicks();
+    else if ((SDL_GetTicks() - Game_UpdateTime_LastFrame) > GAME_UPDATE_INTERVAL)
     {
-        if (((Coor_New.y + (SnakeBodyWidth / 2)) % SnakeBodyWidth) == 0)
-            SnakeMoveDirection_old = SnakeMoveDirection;
+        Game_UpdateTime_LastFrame = SDL_GetTicks();
+
+        Game_Snake_Move();
+        Game_Check_EatFood();
+        Game_Check_EatMyself();
+
+        Screen.clear();
+        Game_Render_BackGround();
+        Game_Render_Food();
+        Game_Render_Snake();
+        Screen.pushSprite(0, 0);
     }
 
+    /* Input update */
+    Game_Input_Update();
+}
 
-    switch (SnakeMoveDirection_old)
+
+
+void Game_Input_Update()
+{
+    if (lgfx::gpio_in(PIN_LEFT) == 0)
+    {
+        if (Snake_MoveDirection_Old == MOVE_RIGHT)
+            return;
+        Snake_MoveDirection = MOVE_LEFT;
+    }
+    else if (lgfx::gpio_in(PIN_RIGHT) == 0)
+    {
+        if (Snake_MoveDirection_Old == MOVE_LEFT)
+            return;
+        Snake_MoveDirection = MOVE_RIGHT;
+    }
+    else if (lgfx::gpio_in(PIN_UP) == 0)
+    {
+        if (Snake_MoveDirection_Old == MOVE_DOWN)
+            return;
+        Snake_MoveDirection = MOVE_UP;
+    }
+    else if (lgfx::gpio_in(PIN_DOWN) == 0)
+    {
+        if (Snake_MoveDirection_Old == MOVE_UP)
+            return;
+        Snake_MoveDirection = MOVE_DOWN;
+    }
+}
+
+
+void Game_Over_Callback()
+{
+    /* Wait reset condition */
+    int PressTime_Count = 0;
+    while (1)
+    {
+        if (!lgfx::gpio_in(PIN_RIGHT))
+        {
+            PressTime_Count++;
+            if (PressTime_Count > 30)
+            {
+                Game_Reset();
+                break;
+            }
+        }
+        else 
+            PressTime_Count = 0;
+        SDL_Delay(10);
+    }
+}
+
+
+void Game_Reset()
+{
+    Snake_BodyList.clear();
+    Snake_BodyList.push_back({(int)(Snake_BodyWidth + Snake_BodyWidth / 2), (int)(Snake_BodyWidth + Snake_BodyWidth / 2)});
+
+    Snake_MoveDirection = MOVE_RIGHT;
+    Snake_MoveDirection_Old = MOVE_RIGHT;
+
+    Game_Score = 0;
+
+    Game_Food_Update();
+}
+
+
+void Game_Over()
+{
+    /* Draw dialog framwork */
+    Screen.fillRoundRect(Lcd.width() / 12 + 3, Lcd.height() / 10 + 3, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, Snake_BodyWidth / 2, COLOR_BG_DIALOG_SHADOW);
+    Screen.fillRoundRect(Lcd.width() / 12, Lcd.height() / 10, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, Snake_BodyWidth / 2, COLOR_BG_DIALOG);
+    
+    char TextBuff[10];
+    Screen.setFont(&fonts::Font8x8C64);
+    Screen.setTextDatum(top_centre);
+    Screen.setTextColor(TFT_WHITE, COLOR_BG_GRID);
+    Screen.setTextSize(Lcd.width() / 42);
+    snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
+    Screen.setTextSize(Lcd.width() / 128);
+    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
+
+    Screen.pushSprite(0, 0);
+
+    Game_Over_Callback();
+}
+
+
+void Game_Snake_Move()
+{
+    Coordinate_t Coor_New = *Snake_BodyList.begin();
+
+    /* Turn when hit the right point */
+    if (((Coor_New.x + (Snake_BodyWidth / 2)) % Snake_BodyWidth) == 0)
+    {
+        if (((Coor_New.y + (Snake_BodyWidth / 2)) % Snake_BodyWidth) == 0)
+            Snake_MoveDirection_Old = Snake_MoveDirection;
+    }
+
+    switch (Snake_MoveDirection_Old)
     {
         case MOVE_UP:
             Coor_New.y -= 1;
@@ -106,8 +241,7 @@ void SnakeMove()
             break;
     }
 
-
-    /* If hit wall */
+    /* If hit the wall */
     if (Coor_New.x < 0)
         Coor_New.x = Lcd.width();
     if (Coor_New.y < 0)
@@ -117,47 +251,42 @@ void SnakeMove()
     if (Coor_New.y > Lcd.height())
         Coor_New.y = 0;
 
-
-
-    SnakeBodyList.insert(SnakeBodyList.begin(), Coor_New);
-    SnakeBodyList.pop_back();
+    Snake_BodyList.insert(Snake_BodyList.begin(), Coor_New);
+    Snake_BodyList.pop_back();
 }
 
 
-void SnakeGrow()
+void Game_Snake_Grow()
 {
-    for (int i = 0; i < SnakeBodyWidth; i++)
+    for (int i = 0; i < Snake_BodyWidth; i++)
     {
-        SnakeBodyList.push_back(SnakeBodyList.back());
+        Snake_BodyList.push_back(Snake_BodyList.back());
     }
 }
 
 
-void SnakeScreenUpdate()
+void Game_Render_Snake()
 {
-    for (auto i : SnakeBodyList)
-    {
-        // Screen.drawRect(i.x - (SnakeBodyWidth / 2), i.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, SNAKE_COLOR);
-        Screen.fillRoundRect(i.x - (SnakeBodyWidth / 2), i.y - (SnakeBodyWidth / 2), SnakeBodyWidth, SnakeBodyWidth, 1, SNAKE_COLOR);
-    }
+    for (auto i : Snake_BodyList)
+        Screen.fillRoundRect(i.x - (Snake_BodyWidth / 2) + 2, i.y - (Snake_BodyWidth / 2) + 2, Snake_BodyWidth, Snake_BodyWidth, 1, COLOR_SNAKE_SHADOW);
+    for (auto i : Snake_BodyList)
+        Screen.fillRoundRect(i.x - (Snake_BodyWidth / 2), i.y - (Snake_BodyWidth / 2), Snake_BodyWidth, Snake_BodyWidth, 1, COLOR_SNAKE);
 }
 
 
-
-
-void FoodUpdate()
+void Game_Food_Update()
 {
     /* Get a random Y */
     while (1)
     {
-        Food_coor.x = random(0 + (SnakeBodyWidth / 2), Lcd.width() - (SnakeBodyWidth / 2));
+        Food_Coor.x = random(0 + (Snake_BodyWidth / 2), Lcd.width() - (Snake_BodyWidth / 2));
         /* Check if fit grid */
-        if (((Food_coor.x + (SnakeBodyWidth / 2)) % SnakeBodyWidth) != 0)
+        if (((Food_Coor.x + (Snake_BodyWidth / 2)) % Snake_BodyWidth) != 0)
             continue;
         /* Check if hit snake */
-        for (auto i : SnakeBodyList) 
+        for (auto i : Snake_BodyList) 
         {
-            if (Food_coor.x == i.x)
+            if (Food_Coor.x == i.x)
                 continue;
         }
         break;
@@ -165,206 +294,87 @@ void FoodUpdate()
     /* Get a random Y */
     while (1)
     {
-        Food_coor.y = random(0 + (SnakeBodyWidth / 2), Lcd.height() - (SnakeBodyWidth / 2));
+        Food_Coor.y = random(0 + (Snake_BodyWidth / 2), Lcd.height() - (Snake_BodyWidth / 2));
         /* Check if fit grid */
-        if (((Food_coor.y + (SnakeBodyWidth / 2)) % SnakeBodyWidth) != 0)
+        if (((Food_Coor.y + (Snake_BodyWidth / 2)) % Snake_BodyWidth) != 0)
             continue;
         /* Check if hit snake */
-        for (auto i : SnakeBodyList) 
+        for (auto i : Snake_BodyList) 
         {
-            if (Food_coor.y == i.y)
+            if (Food_Coor.y == i.y)
                 continue;
         }
         break;
     }
     /* Resize food */
     Food_Size = 0;
-    // std::cout << "(" << Food_coor.x << "," << Food_coor.y << ")\n";
+    // std::cout << "(" << Food_Coor.x << "," << Food_Coor.y << ")\n";
 }
 
 
-void FoodScreenUpdate()
+void Game_Render_Food()
 {
-    Screen.fillRoundRect(Food_coor.x - (Food_Size / 2), Food_coor.y - (Food_Size / 2), Food_Size, Food_Size, 1, FOOD_COLOR);
+    Screen.fillRoundRect(Food_Coor.x - (Food_Size / 2) + 2, Food_Coor.y - (Food_Size / 2) + 2, Food_Size, Food_Size, 1, COLOR_FOOD_SHADOW);
+    Screen.fillRoundRect(Food_Coor.x - (Food_Size / 2), Food_Coor.y - (Food_Size / 2), Food_Size, Food_Size, 1, COLOR_FOOD);
 
     /* Food grow up */
-    if (Food_UpdateTime_old == 0)
-        Food_UpdateTime_old = SDL_GetTicks();
+    if (Food_UpdateTime_Old == 0)
+        Food_UpdateTime_Old = SDL_GetTicks();
     else
     {
-        if ((SDL_GetTicks() - Food_UpdateTime_old) > 10)
+        if ((SDL_GetTicks() - Food_UpdateTime_Old) > 10)
         {
-            Food_UpdateTime_old = SDL_GetTicks();
-            if (Food_Size < SnakeBodyWidth)
+            Food_UpdateTime_Old = SDL_GetTicks();
+            if (Food_Size < Snake_BodyWidth)
                 Food_Size++;
         }
     }
 }
 
 
-void Check_EatFood()
+void Game_Check_EatFood()
 {
-    for (auto i : SnakeBodyList)
+    for (auto i : Snake_BodyList)
     {
-        if ((Food_coor.x == i.x) && (Food_coor.y == i.y))
+        if ((Food_Coor.x == i.x) && (Food_Coor.y == i.y))
         {
-            SnakeScore++;
-            SnakeGrow();
-            FoodUpdate();
+            Game_Score++;
+            Game_Snake_Grow();
+            Game_Food_Update();
         }
     }
 }
 
 
-void Check_EatItself()
+void Game_Check_EatMyself()
 {
     /* ***Check bug, not yet figured out */
-    if (SnakeBodyList.size() < (3 * (SnakeBodyWidth / 2)))
+    if (Snake_BodyList.size() < (3 * (Snake_BodyWidth / 2)))
         return;
 
-    Coordinate_t Coor_Head = *SnakeBodyList.begin();
-    for (auto i = SnakeBodyList.begin() + 1; i <= SnakeBodyList.end(); i++)
+    Coordinate_t Coor_Head = *Snake_BodyList.begin();
+    for (auto i = Snake_BodyList.begin() + 1; i <= Snake_BodyList.end(); i++)
     {
         if ((Coor_Head.x == i->x) && (Coor_Head.y == i->y))
         {
-            GameOver();
+            Game_Over();
         }
     }
 }
 
 
-void BackGroudScreenUpdate()
+void Game_Render_BackGround()
 {
     /* Draw grid */
-    for (int x = -(SnakeBodyWidth / 2) - 1; x < Lcd.width(); x += SnakeBodyWidth)
+    for (int x = -(Snake_BodyWidth / 2) - 1; x < Lcd.width(); x += Snake_BodyWidth)
     {
-        for (int y = -(SnakeBodyWidth / 2); y < Lcd.height(); y += SnakeBodyWidth)
+        for (int y = -(Snake_BodyWidth / 2); y < Lcd.height(); y += Snake_BodyWidth)
         {
-            Screen.drawPixel(x, y, BG_GRID_COLOR);
+            Screen.drawPixel(x, y, COLOR_BG_GRID);
         }
     }
 }
 
 
-void GameReset()
-{
-    SnakeBodyList.clear();
-    SnakeBodyList.push_back({(int)(SnakeBodyWidth + SnakeBodyWidth / 2), (int)(SnakeBodyWidth + SnakeBodyWidth / 2)});
-
-    SnakeMoveDirection = MOVE_RIGHT;
-    SnakeMoveDirection_old = MOVE_RIGHT;
-
-    SnakeScore = 0;
-
-    FoodUpdate();
-}
 
 
-void GameOver()
-{
-    /* Draw dialog framwork */
-    Screen.fillRoundRect(Lcd.width() / 12 + 3, Lcd.height() / 10 + 3, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, 0x443454U);
-    Screen.fillRoundRect(Lcd.width() / 12, Lcd.height() / 10, (Lcd.width() * 5) / 6, (Lcd.height() * 7) / 10, SnakeBodyWidth / 2, BG_GRID_COLOR);
-    
-    char TextBuff[10];
-    Screen.setFont(&fonts::Font8x8C64);
-    Screen.setTextDatum(top_centre);
-    Screen.setTextColor(TFT_WHITE, BG_GRID_COLOR);
-    Screen.setTextSize(Lcd.width() / 42);
-    snprintf(TextBuff, sizeof(TextBuff), "%d", SnakeScore);
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
-    Screen.setTextSize(Lcd.width() / 128);
-    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
-
-    Screen.pushSprite(0, 0);
-
-
-    /* Wait reset condition */
-    int PressTime_Count = 0;
-    while (1)
-    {
-        if (!lgfx::gpio_in(PIN_RIGHT))
-        {
-            PressTime_Count++;
-            if (PressTime_Count > 30)
-            {
-                GameReset();
-                break;
-            }
-        }
-        else 
-            PressTime_Count = 0;
-        SDL_Delay(10);
-    }
-}
-
-
-void InputUpdate()
-{
-    if (lgfx::gpio_in(PIN_LEFT) == 0)
-    {
-        if (SnakeMoveDirection_old == MOVE_RIGHT)
-            return;
-        SnakeMoveDirection = MOVE_LEFT;
-    }
-    else if (lgfx::gpio_in(PIN_RIGHT) == 0)
-    {
-        if (SnakeMoveDirection_old == MOVE_LEFT)
-            return;
-        SnakeMoveDirection = MOVE_RIGHT;
-    }
-    else if (lgfx::gpio_in(PIN_UP) == 0)
-    {
-        if (SnakeMoveDirection_old == MOVE_DOWN)
-            return;
-        SnakeMoveDirection = MOVE_UP;
-    }
-    else if (lgfx::gpio_in(PIN_DOWN) == 0)
-    {
-        if (SnakeMoveDirection_old == MOVE_UP)
-            return;
-        SnakeMoveDirection = MOVE_DOWN;
-    }
-}
-
-
-
-
-void setup()
-{
-    Lcd.init();
-    Screen.createSprite(Lcd.width(), Lcd.height());
-
-
-    GameReset();
-}
-
-
-
-uint32_t Time_Snake = 0;
-
-void loop()
-{
-    /* Frame update */
-    if (Time_Snake == 0)
-        Time_Snake = SDL_GetTicks();
-    else if ((SDL_GetTicks() - Time_Snake) > 5)
-    {
-        Time_Snake = SDL_GetTicks();
-
-        SnakeMove();
-        Check_EatFood();
-        Check_EatItself();
-
-        Screen.clear();
-        BackGroudScreenUpdate();
-        FoodScreenUpdate();
-        SnakeScreenUpdate();
-
-        Screen.pushSprite(0, 0);
-    }
-
-    /* Input update */
-    InputUpdate();
-}
