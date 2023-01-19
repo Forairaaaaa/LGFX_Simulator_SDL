@@ -65,7 +65,6 @@ enum MoveDirection_t {
     MOVE_RIGHT
 };
 
-static unsigned int Snake_BodyWidth = SNAKE_BODY_WIDTH;
 std::vector<Coordinate_t> Snake_BodyList;
 static MoveDirection_t Snake_MoveDirection = MOVE_RIGHT;
 static MoveDirection_t Snake_MoveDirection_Old = MOVE_RIGHT;
@@ -103,8 +102,6 @@ void setup()
 {
     Lcd.init();
     Screen.createSprite(Lcd.width(), Lcd.height());
-
-
 
     /* Game init */
     Game_Reset();
@@ -174,7 +171,7 @@ void Game_Over_Callback()
 void Game_Reset()
 {
     Snake_BodyList.clear();
-    Snake_BodyList.push_back({(int)(Snake_BodyWidth + Snake_BodyWidth / 2), (int)(Snake_BodyWidth + Snake_BodyWidth / 2)});
+    Snake_BodyList.push_back({(int)(SNAKE_BODY_WIDTH + SNAKE_BODY_WIDTH / 2), (int)(SNAKE_BODY_WIDTH + SNAKE_BODY_WIDTH / 2)});
     Snake_MoveDirection = MOVE_RIGHT;
     Snake_MoveDirection_Old = MOVE_RIGHT;
     Game_Score = 0;
@@ -270,9 +267,9 @@ void Game_Snake_Move()
     Coordinate_t Coor_New = *Snake_BodyList.begin();
 
     /* Turn when hit the right point */
-    if (((Coor_New.x + (Snake_BodyWidth / 2)) % Snake_BodyWidth) == 0)
+    if (((Coor_New.x + (SNAKE_BODY_WIDTH / 2)) % SNAKE_BODY_WIDTH) == 0)
     {
-        if (((Coor_New.y + (Snake_BodyWidth / 2)) % Snake_BodyWidth) == 0)
+        if (((Coor_New.y + (SNAKE_BODY_WIDTH / 2)) % SNAKE_BODY_WIDTH) == 0)
             Snake_MoveDirection_Old = Snake_MoveDirection;
     }
 
@@ -311,19 +308,17 @@ void Game_Snake_Move()
 
 void Game_Snake_Grow()
 {
-    for (int i = 0; i < Snake_BodyWidth; i++)
-    {
+    for (int i = 0; i < SNAKE_BODY_WIDTH; i++)
         Snake_BodyList.push_back(Snake_BodyList.back());
-    }
 }
 
 
 void Game_Render_Snake()
 {
     for (auto i : Snake_BodyList)
-        Screen.fillRoundRect(i.x - (Snake_BodyWidth / 2) + 2, i.y - (Snake_BodyWidth / 2) + 2, Snake_BodyWidth, Snake_BodyWidth, 1, COLOR_SNAKE_SHADOW);
+        Screen.fillRoundRect(i.x - (SNAKE_BODY_WIDTH / 2) + 2, i.y - (SNAKE_BODY_WIDTH / 2) + 2, SNAKE_BODY_WIDTH, SNAKE_BODY_WIDTH, 1, COLOR_SNAKE_SHADOW);
     for (auto i : Snake_BodyList)
-        Screen.fillRoundRect(i.x - (Snake_BodyWidth / 2), i.y - (Snake_BodyWidth / 2), Snake_BodyWidth, Snake_BodyWidth, 1, COLOR_SNAKE);
+        Screen.fillRoundRect(i.x - (SNAKE_BODY_WIDTH / 2), i.y - (SNAKE_BODY_WIDTH / 2), SNAKE_BODY_WIDTH, SNAKE_BODY_WIDTH, 1, COLOR_SNAKE);
 }
 
 
@@ -332,9 +327,9 @@ void Game_Food_Update()
     /* Get a random Y */
     while (1)
     {
-        Food_Coor.x = Game_random(0 + (Snake_BodyWidth / 2), Lcd.width() - (Snake_BodyWidth / 2));
+        Food_Coor.x = Game_random(0 + (SNAKE_BODY_WIDTH / 2), Lcd.width() - (SNAKE_BODY_WIDTH / 2));
         /* Check if fit grid */
-        if (((Food_Coor.x + (Snake_BodyWidth / 2)) % Snake_BodyWidth) != 0)
+        if (((Food_Coor.x + (SNAKE_BODY_WIDTH / 2)) % SNAKE_BODY_WIDTH) != 0)
             continue;
         /* Check if hit snake */
         for (auto i : Snake_BodyList) 
@@ -347,9 +342,9 @@ void Game_Food_Update()
     /* Get a random Y */
     while (1)
     {
-        Food_Coor.y = Game_random(0 + (Snake_BodyWidth / 2), Lcd.height() - (Snake_BodyWidth / 2));
+        Food_Coor.y = Game_random(0 + (SNAKE_BODY_WIDTH / 2), Lcd.height() - (SNAKE_BODY_WIDTH / 2));
         /* Check if fit grid */
-        if (((Food_Coor.y + (Snake_BodyWidth / 2)) % Snake_BodyWidth) != 0)
+        if (((Food_Coor.y + (SNAKE_BODY_WIDTH / 2)) % SNAKE_BODY_WIDTH) != 0)
             continue;
         /* Check if hit snake */
         for (auto i : Snake_BodyList) 
@@ -386,7 +381,7 @@ void Game_Render_Food()
         if ((SDL_GetTicks() - Food_UpdateTime_Old) > 10)
         {
             Food_UpdateTime_Old = SDL_GetTicks();
-            if (Food_Size < Snake_BodyWidth)
+            if (Food_Size < SNAKE_BODY_WIDTH)
                 Food_Size++;
         }
     }
@@ -418,20 +413,15 @@ void Game_Render_FoodExplode()
 
         if (Explode_UpdateTime_Old == 0)
             Explode_UpdateTime_Old = SDL_GetTicks();
-        else
-        {
-            if ((SDL_GetTicks() - Explode_UpdateTime_Old) > 15)
+        else if ((SDL_GetTicks() - Explode_UpdateTime_Old) > 15)
             {
                 Explode_UpdateTime_Old = SDL_GetTicks();
 
                 if (Explode_Size < (SNAKE_BODY_WIDTH * 2))
                     Explode_Size++;
                 else
-                {
                     Explode_Exploding = false;
-                }
             }
-        }
     }
 }
 
@@ -454,33 +444,33 @@ void Game_Check_EatFood()
 void Game_Check_EatMyself()
 {
     /* ***Check bug, not yet figured out */
-    if (Snake_BodyList.size() < (3 * (Snake_BodyWidth / 2)))
+    if (Snake_BodyList.size() < (3 * (SNAKE_BODY_WIDTH / 2)))
         return;
 
     Coordinate_t Coor_Head = *Snake_BodyList.begin();
     for (auto i = Snake_BodyList.begin() + 1; i <= Snake_BodyList.end(); i++)
     {
         if ((Coor_Head.x == i->x) && (Coor_Head.y == i->y))
-        {
             Game_Over();
-        }
     }
 }
 
 
-
 void Game_Render_BackGround()
 {   
+    /* Draw score */
+    char TextBuff[10];
+    Screen.setFont(&fonts::Font8x8C64);
+    Screen.setTextDatum(top_center);
+    Screen.setTextSize(Lcd.width() / 20);
+    snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
+    Screen.setTextColor(COLOR_BG_DIALOG_SHADOW, TFT_BLACK);
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 4, (Lcd.height() / 2) - Screen.getTextSizeY() * 4);
+    Screen.setTextColor(COLOR_BG_GRID, TFT_BLACK);
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 8, (Lcd.height() / 2) - Screen.getTextSizeY() * 4);
+
     /* Draw grid */
-    for (int x = -(Snake_BodyWidth / 2) - 1; x < Lcd.width(); x += Snake_BodyWidth)
-    {
-        for (int y = -(Snake_BodyWidth / 2); y < Lcd.height(); y += Snake_BodyWidth)
-        {
+    for (int x = -(SNAKE_BODY_WIDTH / 2) - 1; x < Lcd.width(); x += SNAKE_BODY_WIDTH)
+        for (int y = -(SNAKE_BODY_WIDTH / 2); y < Lcd.height(); y += SNAKE_BODY_WIDTH)
             Screen.drawPixel(x, y, COLOR_BG_GRID);
-        }
-    }
-
-
-    
-
 }
