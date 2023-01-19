@@ -35,9 +35,6 @@ int Game_random(int low, int high)
 }
 
 
-
-
-
 /* Game config */
 #define SNAKE_BODY_WIDTH        12
 #define GAME_UPDATE_INTERVAL    10
