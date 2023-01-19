@@ -45,6 +45,7 @@ int Game_random(int low, int high)
 #define COLOR_SNAKE_SHADOW      0Xb55f3cU
 #define COLOR_FOOD              0x88d35eU
 #define COLOR_FOOD_SHADOW       0x5d8c3dU
+#define COLOR_EXPLODE           0x88d35eU
 #define COLOR_BG_GRID           0x61497eU
 #define COLOR_BG_FRAME          0x61497eU
 #define COLOR_BG_DIALOG         0x61497eU
@@ -70,6 +71,10 @@ static MoveDirection_t Snake_MoveDirection_Old = MOVE_RIGHT;
 static Coordinate_t Food_Coor = {0, 0};
 static uint8_t Food_Size = 0;
 static uint32_t Food_UpdateTime_Old = 0;
+static Coordinate_t Explode_Coor = {0, 0};
+static uint8_t Explode_Size = 0;
+static bool Explode_Exploding = false;
+static uint32_t Explode_UpdateTime_Old = 0;
 static uint32_t Game_UpdateTime_LastFrame = 0;
 static unsigned int Game_Score = 0;
 
@@ -82,9 +87,11 @@ void Game_Over_Callback();
 void Game_Snake_Move();
 void Game_Snake_Grow();
 void Game_Food_Update();
+void Game_FoodExplode_Update();
 void Game_Render_Snake();
 void Game_Render_BackGround();
 void Game_Render_Food();
+void Game_Render_FoodExplode();
 void Game_Check_EatFood();
 void Game_Check_EatMyself();
 
@@ -95,10 +102,10 @@ void setup()
     Lcd.init();
     Screen.createSprite(Lcd.width(), Lcd.height());
 
+
+
     /* Game init */
     Game_Reset();
-
-    Game_Over();
 }
 
 
@@ -119,6 +126,7 @@ void loop()
         Game_Render_BackGround();
         Game_Render_Food();
         Game_Render_Snake();
+        Game_Render_FoodExplode();
         Screen.pushSprite(0, 0);
     }
 
@@ -165,11 +173,10 @@ void Game_Reset()
 {
     Snake_BodyList.clear();
     Snake_BodyList.push_back({(int)(Snake_BodyWidth + Snake_BodyWidth / 2), (int)(Snake_BodyWidth + Snake_BodyWidth / 2)});
-
     Snake_MoveDirection = MOVE_RIGHT;
     Snake_MoveDirection_Old = MOVE_RIGHT;
-
     Game_Score = 0;
+    Explode_Exploding = false;
 
     Game_Food_Update();
 }
@@ -186,14 +193,17 @@ void Game_Over()
         Screen.pushSprite(0, 0);
     }
     SDL_Delay(50);
+
     char TextBuff[10];
     int32_t FontHeight = 0;
     Screen.setFont(&fonts::Font8x8C64);
     Screen.setTextDatum(top_center);
     Screen.setTextColor(TFT_WHITE, COLOR_BG_GRID);
+
     Screen.setTextSize(Lcd.width() / 128);
     snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
     Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
+
     Screen.setTextSize(Lcd.width() / 42);
     FontHeight = Screen.fontHeight();
     snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
@@ -204,6 +214,7 @@ void Game_Over()
         SDL_Delay(2);
         Screen.pushSprite(0, 0);
     }
+
     Screen.pushSprite(0, 0);
     Game_Over_Callback();
 
@@ -348,7 +359,15 @@ void Game_Food_Update()
     }
     /* Resize food */
     Food_Size = 0;
-    // std::cout << "(" << Food_Coor.x << "," << Food_Coor.y << ")\n";
+}
+
+
+void Game_FoodExplode_Update()
+{
+    Explode_Exploding = true;
+    Explode_Coor.x = Snake_BodyList.begin()->x;
+    Explode_Coor.y = Snake_BodyList.begin()->y;
+    Explode_Size = 2;
 }
 
 
@@ -372,6 +391,41 @@ void Game_Render_Food()
 }
 
 
+void Game_Render_FoodExplode()
+{
+    if (Explode_Exploding)
+    {
+        /* Render octagon explode */
+        int32_t LittleFood_Size = SNAKE_BODY_WIDTH / 2;
+        Screen.fillRoundRect(Explode_Coor.x + Explode_Size, Explode_Coor.y, LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x - Explode_Size, Explode_Coor.y, LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x, Explode_Coor.y + Explode_Size, LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x, Explode_Coor.y - Explode_Size, LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x + (Explode_Size * 7 / 10), Explode_Coor.y - (Explode_Size * 7 / 10), LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x + (Explode_Size * 7 / 10), Explode_Coor.y + (Explode_Size * 7 / 10), LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x - (Explode_Size * 7 / 10), Explode_Coor.y + (Explode_Size * 7 / 10), LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+        Screen.fillRoundRect(Explode_Coor.x - (Explode_Size * 7 / 10), Explode_Coor.y - (Explode_Size * 7 / 10), LittleFood_Size, LittleFood_Size, 1, COLOR_EXPLODE);
+
+        if (Explode_UpdateTime_Old == 0)
+            Explode_UpdateTime_Old = SDL_GetTicks();
+        else
+        {
+            if ((SDL_GetTicks() - Explode_UpdateTime_Old) > 15)
+            {
+                Explode_UpdateTime_Old = SDL_GetTicks();
+
+                if (Explode_Size < (SNAKE_BODY_WIDTH * 2))
+                    Explode_Size++;
+                else
+                {
+                    Explode_Exploding = false;
+                }
+            }
+        }
+    }
+}
+
+
 void Game_Check_EatFood()
 {
     for (auto i : Snake_BodyList)
@@ -381,6 +435,7 @@ void Game_Check_EatFood()
             Game_Score++;
             Game_Snake_Grow();
             Game_Food_Update();
+            Game_FoodExplode_Update();
         }
     }
 }
