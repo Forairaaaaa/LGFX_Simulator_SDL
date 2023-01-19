@@ -177,7 +177,7 @@ void Game_Reset()
 
 void Game_Over()
 {
-    /* Render dialog framwork */
+    /* Render dialog window */
     for (int w = 0; w < ((Lcd.width() * 5) / 6); w++)
     {
         Screen.fillRoundRect((Lcd.width() / 12 + 3) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10 + 3, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG_SHADOW);
@@ -185,28 +185,15 @@ void Game_Over()
         SDL_Delay(2);
         Screen.pushSprite(0, 0);
     }
-    SDL_Delay(100);
-    
+    SDL_Delay(50);
     char TextBuff[10];
     int32_t FontHeight = 0;
     Screen.setFont(&fonts::Font8x8C64);
     Screen.setTextDatum(top_center);
     Screen.setTextColor(TFT_WHITE, COLOR_BG_GRID);
-    
-    // Screen.setTextSize(Lcd.width() / 42);
-    // snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
-    // Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
-    // Screen.setTextSize(Lcd.width() / 128);
-    // snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
-    // Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
-
-
-    // Screen.setTextSize(Lcd.width() / 42);
-    // snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
-    // Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (Screen.fontHeight() / 2 * 3));
-
-
-
+    Screen.setTextSize(Lcd.width() / 128);
+    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
+    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
     Screen.setTextSize(Lcd.width() / 42);
     FontHeight = Screen.fontHeight();
     snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
@@ -214,34 +201,22 @@ void Game_Over()
     {
         Screen.setTextSize(s);
         Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (FontHeight / 2 * 3));
-        SDL_Delay(5);
+        SDL_Delay(2);
         Screen.pushSprite(0, 0);
     }
-    SDL_Delay(100);
-
-
-
-    // Screen.setTextSize(Lcd.width() / 128);
-    // snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
-    // Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
-
-
-    snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
-    for (float s = 0.5; s <= (Lcd.width() / 128); s += 0.1)
-    {
-        Screen.setTextSize(s);
-        Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
-        SDL_Delay(5);
-        Screen.pushSprite(0, 0);
-
-        std::cout << s << std::endl;
-    }
-
-
-
     Screen.pushSprite(0, 0);
-
     Game_Over_Callback();
+
+    /* Close dialog window */
+    for (int w = ((Lcd.width() * 5) / 6); w > 0; w--)
+    {
+        Screen.clear();
+        Game_Render_BackGround();
+        Screen.fillRoundRect((Lcd.width() / 12 + 3) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10 + 3, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG_SHADOW);
+        Screen.fillRoundRect((Lcd.width() / 12) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG);
+        SDL_Delay(2);
+        Screen.pushSprite(0, 0);
+    }
     Game_Reset();
 }
 
