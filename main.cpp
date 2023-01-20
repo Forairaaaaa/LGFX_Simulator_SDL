@@ -18,7 +18,6 @@
 
 static LGFX Lcd(128, 128);
 // static LGFX Lcd(320, 240);
-// static LGFX Lcd(1080, 720);
 static LGFX_Sprite Screen(&Lcd);
 
 #define PIN_LEFT    39
@@ -34,7 +33,6 @@ int Game_random(int low, int high)
     return dist(gen);
 }
 
-
 /* Game config */
 #define SNAKE_BODY_WIDTH        12
 #define GAME_UPDATE_INTERVAL    10
@@ -48,7 +46,6 @@ int Game_random(int low, int high)
 #define COLOR_BG_FRAME          0x61497eU
 #define COLOR_BG_DIALOG         0x61497eU
 #define COLOR_BG_DIALOG_SHADOW  0x443454U
-
 
 struct Coordinate_t {
     int x;
@@ -76,7 +73,6 @@ static uint32_t BackGround_UpdateTime_Old = 0;
 static uint32_t Game_UpdateTime_LastFrame = 0;
 static unsigned int Game_Score = 0;
 
-
 void Game_Reset();
 void Game_Over();
 void Game_Input_Update();
@@ -93,7 +89,7 @@ void Game_Render_FoodExplode();
 void Game_Check_EatFood();
 void Game_Check_EatMyself();
 
-
+// --------------------------------------------------------------------------- //
 
 void setup()
 {
@@ -163,7 +159,7 @@ void Game_Over_Callback()
     }
 }
 
-
+// --------------------------------------------------------------------------- //
 
 void Game_Reset()
 {
@@ -181,10 +177,10 @@ void Game_Reset()
 void Game_Over()
 {
     /* Render dialog window */
-    for (int w = 0; w < ((Lcd.width() * 5) / 6); w++)
+    for (int w = 0; w < ((Screen.width() * 5) / 6); w++)
     {
-        Screen.fillRoundRect((Lcd.width() / 12 + 3) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10 + 3, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG_SHADOW);
-        Screen.fillRoundRect((Lcd.width() / 12) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG);
+        Screen.fillRoundRect((Screen.width() / 12 + 3) + ((Screen.width() * 5) / 12) - (w / 2), Screen.height() / 10 + 3, w, (Screen.height() * 7) / 10, 8, COLOR_BG_DIALOG_SHADOW);
+        Screen.fillRoundRect((Screen.width() / 12) + ((Screen.width() * 5) / 12) - (w / 2), Screen.height() / 10, w, (Screen.height() * 7) / 10, 8, COLOR_BG_DIALOG);
         SDL_Delay(2);
         Screen.pushSprite(0, 0);
     }
@@ -196,17 +192,17 @@ void Game_Over()
     Screen.setTextDatum(top_center);
     Screen.setTextColor(TFT_WHITE, COLOR_BG_GRID);
 
-    Screen.setTextSize(Lcd.width() / 128);
+    Screen.setTextSize(Screen.width() / 128);
     snprintf(TextBuff, sizeof(TextBuff), "GAME OVER");
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2));
+    Screen.drawCenterString(TextBuff, Screen.width() / 2 - 3, (Screen.height() / 2));
 
-    Screen.setTextSize(Lcd.width() / 42);
+    Screen.setTextSize(Screen.width() / 42);
     FontHeight = Screen.fontHeight();
     snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
-    for (float s = 1; s < (Lcd.width() / 42); s += 0.1)
+    for (float s = 1; s < (Screen.width() / 42); s += 0.1)
     {
         Screen.setTextSize(s);
-        Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 3, (Lcd.height() / 2) - (FontHeight / 2 * 3));
+        Screen.drawCenterString(TextBuff, Screen.width() / 2 - 3, (Screen.height() / 2) - (FontHeight / 2 * 3));
         SDL_Delay(2);
         Screen.pushSprite(0, 0);
     }
@@ -215,12 +211,12 @@ void Game_Over()
     Game_Over_Callback();
 
     /* Close dialog window */
-    for (int w = ((Lcd.width() * 5) / 6); w > 0; w--)
+    for (int w = ((Screen.width() * 5) / 6); w > 0; w--)
     {
         Screen.clear();
         Game_Render_BackGround();
-        Screen.fillRoundRect((Lcd.width() / 12 + 3) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10 + 3, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG_SHADOW);
-        Screen.fillRoundRect((Lcd.width() / 12) + ((Lcd.width() * 5) / 12) - (w / 2), Lcd.height() / 10, w, (Lcd.height() * 7) / 10, 8, COLOR_BG_DIALOG);
+        Screen.fillRoundRect((Screen.width() / 12 + 3) + ((Screen.width() * 5) / 12) - (w / 2), Screen.height() / 10 + 3, w, (Screen.height() * 7) / 10, 8, COLOR_BG_DIALOG_SHADOW);
+        Screen.fillRoundRect((Screen.width() / 12) + ((Screen.width() * 5) / 12) - (w / 2), Screen.height() / 10, w, (Screen.height() * 7) / 10, 8, COLOR_BG_DIALOG);
         SDL_Delay(2);
         Screen.pushSprite(0, 0);
     }
@@ -290,12 +286,12 @@ void Game_Snake_Move()
 
     /* If hit the wall */
     if (Coor_New.x < 0)
-        Coor_New.x = Lcd.width();
+        Coor_New.x = Screen.width();
     if (Coor_New.y < 0)
-        Coor_New.y = Lcd.height();
-    if (Coor_New.x > Lcd.width())
+        Coor_New.y = Screen.height();
+    if (Coor_New.x > Screen.width())
         Coor_New.x = 0;
-    if (Coor_New.y > Lcd.height())
+    if (Coor_New.y > Screen.height())
         Coor_New.y = 0;
 
     Snake_BodyList.insert(Snake_BodyList.begin(), Coor_New);
@@ -324,7 +320,7 @@ void Game_Food_Update()
     /* Get a random Y */
     while (1)
     {
-        Food_Coor.x = Game_random(0 + (SNAKE_BODY_WIDTH / 2), Lcd.width() - (SNAKE_BODY_WIDTH / 2));
+        Food_Coor.x = Game_random(0 + (SNAKE_BODY_WIDTH / 2), Screen.width() - (SNAKE_BODY_WIDTH / 2));
         /* Check if fit grid */
         if (((Food_Coor.x + (SNAKE_BODY_WIDTH / 2)) % SNAKE_BODY_WIDTH) != 0)
             continue;
@@ -339,7 +335,7 @@ void Game_Food_Update()
     /* Get a random Y */
     while (1)
     {
-        Food_Coor.y = Game_random(0 + (SNAKE_BODY_WIDTH / 2), Lcd.height() - (SNAKE_BODY_WIDTH / 2));
+        Food_Coor.y = Game_random(0 + (SNAKE_BODY_WIDTH / 2), Screen.height() - (SNAKE_BODY_WIDTH / 2));
         /* Check if fit grid */
         if (((Food_Coor.y + (SNAKE_BODY_WIDTH / 2)) % SNAKE_BODY_WIDTH) != 0)
             continue;
@@ -459,15 +455,15 @@ void Game_Render_BackGround()
     char TextBuff[10];
     Screen.setFont(&fonts::Font8x8C64);
     Screen.setTextDatum(top_center);
-    Screen.setTextSize(Lcd.width() / 20);
+    Screen.setTextSize(Screen.width() / 20);
     snprintf(TextBuff, sizeof(TextBuff), "%d", Game_Score);
     Screen.setTextColor(COLOR_BG_DIALOG_SHADOW, TFT_BLACK);
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 4, (Lcd.height() / 2) - Screen.getTextSizeY() * 4);
+    Screen.drawCenterString(TextBuff, Screen.width() / 2 - 4, (Screen.height() / 2) - Screen.getTextSizeY() * 4);
     Screen.setTextColor(COLOR_BG_GRID, TFT_BLACK);
-    Screen.drawCenterString(TextBuff, Lcd.width() / 2 - 8, (Lcd.height() / 2) - Screen.getTextSizeY() * 4);
+    Screen.drawCenterString(TextBuff, Screen.width() / 2 - 8, (Screen.height() / 2) - Screen.getTextSizeY() * 4);
 
     /* Draw grid */
-    for (int x = -(SNAKE_BODY_WIDTH / 2) - 1; x < Lcd.width(); x += SNAKE_BODY_WIDTH)
-        for (int y = -(SNAKE_BODY_WIDTH / 2); y < Lcd.height(); y += SNAKE_BODY_WIDTH)
+    for (int x = -(SNAKE_BODY_WIDTH / 2) - 1; x < Screen.width(); x += SNAKE_BODY_WIDTH)
+        for (int y = -(SNAKE_BODY_WIDTH / 2); y < Screen.height(); y += SNAKE_BODY_WIDTH)
             Screen.drawPixel(x, y, COLOR_BG_GRID);
 }
