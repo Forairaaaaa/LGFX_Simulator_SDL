@@ -6,8 +6,8 @@ enable_testing()
 
 
 set(SRC_FILES
-    "main.cpp"
-    "LGFX_SDL.cpp"
+    LGFX_SDL.cpp
+    main.cpp
 )
 
 
