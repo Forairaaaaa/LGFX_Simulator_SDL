@@ -1,30 +1,23 @@
-#include <thread>
-
-#define LGFX_USE_V1
-#include <LovyanGFX.hpp>
-#include <LGFX_AUTODETECT.hpp>
+#include "Lib/LovyanGFX/src/lgfx/v1/platforms/sdl/Panel_sdl.hpp"
+#if defined ( SDL_h_ )
 
 void setup(void);
 void loop(void);
 
-static void loopThread(void)
+__attribute__((weak))
+int user_func(bool* running)
 {
-    setup();
-    for (;;)
-    {
-        std::this_thread::yield();
-        SDL_Delay(2);
-        loop();
-    }
+  setup();
+  do
+  {
+    loop();
+  } while (*running);
+  return 0;
 }
 
-int main(int, char **)
+int main(int, char**)
 {
-    std::thread sub_thread(loopThread);
-    for (;;)
-    {
-        std::this_thread::yield();
-        lgfx::Panel_sdl::sdl_event_handler();
-        SDL_Delay(5);
-    }
+  return lgfx::Panel_sdl::main(user_func);
 }
+
+#endif
