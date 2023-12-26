@@ -4,3 +4,6 @@
 [submodule "dependencies/LovyanGFX"]
 	path = dependencies/LovyanGFX
 	url = https://github.com/lovyan03/LovyanGFX.git
+[submodule "dependencies/mooncake"]
+	path = dependencies/mooncake
+	url = https://github.com/Forairaaaaa/mooncake.git

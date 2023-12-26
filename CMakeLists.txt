@@ -4,6 +4,23 @@ project(LGFX_SDL)
 
 add_definitions(-DLGFX_SDL)
 
+
+# Simu project
+file(GLOB_RECURSE SIMU_PROJECT_SRCS
+    simu_project/apps/*.c
+    simu_project/apps/*.cpp
+    simu_project/hal/hal_simulator/*.c
+    simu_project/hal/hal_simulator/*.cpp
+)
+set(SIMU_PROJECT_SRCS_EXTRA
+    simu_project/simu_project.cpp
+    simu_project/hal/hal.cpp
+    simu_project/hal/lgfx_fx/lgfx_fx.cpp
+)
+
+# Mooncake 
+add_subdirectory("dependencies/mooncake")
+
 # ビルド対象にするファイルを指定する;
 # LovyanGFXのあるパスと位置関係を変えた場合は相対パス記述を環境に合わせて調整すること;
 file(GLOB Target_Files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS 
@@ -17,7 +34,7 @@ file(GLOB Target_Files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
     dependencies/LovyanGFX/src/lgfx/v1/panel/Panel_FrameBufferBase.cpp
     dependencies/LovyanGFX/src/lgfx/v1/platforms/sdl/*.cpp
     )
-add_executable (LGFX_SDL ${Target_Files})
+add_executable (LGFX_SDL ${Target_Files} ${SIMU_PROJECT_SRCS} ${SIMU_PROJECT_SRCS_EXTRA})
 
 # includeするファイルのパスを指定する;
 # LovyanGFXのあるパスと位置関係を変えた場合は相対パス記述を環境に合わせて調整すること;
@@ -29,7 +46,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 # SDL2_INCLUDE_DIRS と SDL2_LIBRARIES を事前に設定しておく;
     find_package(SDL2 REQUIRED SDL2)
     include_directories(${SDL2_INCLUDE_DIRS})
-    target_link_libraries(LGFX_SDL -lpthread ${SDL2_LIBRARIES})
+    target_link_libraries(LGFX_SDL -lpthread ${SDL2_LIBRARIES} mooncake)
 
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
 
@@ -38,7 +55,7 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
     target_include_directories(LGFX_SDL PUBLIC "C:/SDL2/include")
 
 # SDL2を配置したパス内の.libファイルのパスを指定する;
-    target_link_libraries(LGFX_SDL PUBLIC "C:/SDL2/lib/x64/SDL2.lib")
+    target_link_libraries(LGFX_SDL PUBLIC "C:/SDL2/lib/x64/SDL2.lib" mooncake)
 
 
     add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
