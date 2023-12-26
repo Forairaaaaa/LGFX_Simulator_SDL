@@ -15,7 +15,7 @@
 #include <LGFX_AUTODETECT.hpp>
 #include <LovyanGFX.hpp>
 #include <random>
-#include "performance_window.hpp"
+// #include "performance_window.hpp"
 
 
 
@@ -38,7 +38,7 @@ int Game_random(int low, int high)
     return dist(gen);
 }
 
-static PerformanceWindow _pw;
+// static PerformanceWindow _pw;
 
 
 
@@ -58,5 +58,5 @@ void loop()
 
 
     // lgfx::delay(5);
-    _pw.update();
+    // _pw.update();
 }

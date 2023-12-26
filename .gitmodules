@@ -1,3 +1,6 @@
 [submodule "Lib/LovyanGFX"]
 	path = Lib/LovyanGFX
 	url = https://github.com/lovyan03/LovyanGFX.git
+[submodule "dependencies/LovyanGFX"]
+	path = dependencies/LovyanGFX
+	url = https://github.com/lovyan03/LovyanGFX.git

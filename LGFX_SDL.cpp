@@ -1,4 +1,4 @@
-#include "Lib/LovyanGFX/src/lgfx/v1/platforms/sdl/Panel_sdl.hpp"
+#include "dependencies/LovyanGFX/src/lgfx/v1/platforms/sdl/Panel_sdl.hpp"
 #if defined ( SDL_h_ )
 
 void setup(void);

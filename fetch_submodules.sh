@@ -1,4 +1,4 @@
 git submodule init
 git submodule update
-cd Lib/LovyanGFX
+cd dependencies/LovyanGFX
 git checkout master
