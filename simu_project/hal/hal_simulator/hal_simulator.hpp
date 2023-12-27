@@ -25,13 +25,25 @@
 
 class HAL_Simulator : public HAL
 {
+private:
+    int _screenWidth;
+    int _screenHeight;
+
+public:
     std::string type() override { return "Simulator"; }
+
+
+    HAL_Simulator(int screenWidth = 240, int screenHeight = 240)
+    {
+        _screenWidth = screenWidth;
+        _screenHeight = screenHeight;
+    }
 
 
     void init() override
     {
         // Display 
-        _display = new LGFX(240, 240);
+        _display = new LGFX(_screenWidth, _screenHeight);
         _display->init();
 
         // Canvas
