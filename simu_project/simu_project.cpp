@@ -29,7 +29,7 @@ void SIMU_PROJECT::Setup()
 
     // HAL injection 
     #ifndef ESP_PLATFORM
-    HAL::Inject(new HAL_Simulator(320, 240));
+    HAL::Inject(new HAL_Simulator(240, 240));
     #else
     HAL::Inject(new HAL_Rachel);
     #endif
@@ -38,15 +38,17 @@ void SIMU_PROJECT::Setup()
     _mooncake = new Mooncake;
     _mooncake->init();
 
-    // // Install launcher 
-    // auto launcher = new APPS::Launcher_Packer;
-    // _mooncake->installApp(launcher);
+    // Install launcher 
+    auto launcher = simu_project_launcher_install_callback();
+    if (launcher != nullptr)
+        _mooncake->installApp(launcher);
 
     // Install apps 
-    rachel_app_install_callback(_mooncake);
+    simu_project_app_install_callback(_mooncake);
 
-    // // Create launcher 
-    // _mooncake->createApp(launcher);
+    // Create launcher 
+    if (launcher != nullptr)
+        _mooncake->createApp(launcher);
 }
 
 

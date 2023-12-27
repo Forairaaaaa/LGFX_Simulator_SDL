@@ -13,7 +13,13 @@
 /* Header files locator(Don't remove) */
 
 
-void rachel_app_install_callback(MOONCAKE::Mooncake* mooncake)
+void simu_project_app_install_callback(MOONCAKE::Mooncake* mooncake)
 {
     /* Install app locator(Don't remove) */
+}
+
+
+MOONCAKE::APP_PACKER_BASE* simu_project_launcher_install_callback()
+{
+    return nullptr;
 }
