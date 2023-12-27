@@ -16,11 +16,6 @@
 #else
 #include "hal/hal_rachel/hal_rachel.h"
 #endif
-#include "apps/apps.h"
-
-
-using namespace MOONCAKE;
-static Mooncake* _mooncake = nullptr;
 
 
 void SIMU_PROJECT::Setup()
@@ -33,22 +28,6 @@ void SIMU_PROJECT::Setup()
     #else
     HAL::Inject(new HAL_Rachel);
     #endif
-
-    // Mooncake framework 
-    _mooncake = new Mooncake;
-    _mooncake->init();
-
-    // Install launcher 
-    auto launcher = simu_project_launcher_install_callback();
-    if (launcher != nullptr)
-        _mooncake->installApp(launcher);
-
-    // Install apps 
-    simu_project_app_install_callback(_mooncake);
-
-    // Create launcher 
-    if (launcher != nullptr)
-        _mooncake->createApp(launcher);
 }
 
 
@@ -64,8 +43,6 @@ int Game_random(int low, int high)
 
 void SIMU_PROJECT::Loop()
 {
-    _mooncake->update();
-
     HAL::GetCanvas()->fillSmoothCircle(
         Game_random(0, HAL::GetCanvas()->width()), Game_random(0, HAL::GetCanvas()->height()),
         Game_random(1, 24), Game_random(TFT_BLACK, TFT_WHITE));
@@ -76,7 +53,6 @@ void SIMU_PROJECT::Loop()
 void SIMU_PROJECT::Destroy()
 {
     // Free 
-    delete _mooncake;
     HAL::Destroy();
     spdlog::warn("simu project destroy");
 }
