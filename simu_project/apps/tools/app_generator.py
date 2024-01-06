@@ -1,8 +1,10 @@
 import os as os
 from shutil import copytree
 import re
+import sys
 
 app_name = ""
+script_directory = os.path.dirname(os.path.abspath(sys.argv[0])) + "/"
 def getAppName():
     global app_name
     app_name = input("app name: ")
@@ -23,7 +25,7 @@ def creteApp():
     global app_name
 
     # Get file name
-    folder_name = "../app_" + app_name
+    folder_name = script_directory + "../app_" + app_name
     source_file_name = folder_name + "/app_" + app_name + ".cpp"
     header_file_name = folder_name + "/app_" + app_name + ".h"
     print("file names:\n - {}\n - {}\n".format(source_file_name, header_file_name))
@@ -36,8 +38,8 @@ def creteApp():
     header_file = open(header_file_name, mode='x')
 
     # Read Template content
-    content_source_file = open("../app_template/app_template.cpp", mode='r').read()
-    content_header_file = open("../app_template/app_template.h", mode='r').read()
+    content_source_file = open(script_directory + "../app_template/app_template.cpp", mode='r').read()
+    content_header_file = open(script_directory + "../app_template/app_template.h", mode='r').read()
 
     # Replace app class
     app_class_name = app_name.capitalize()
@@ -58,7 +60,7 @@ def creteApp():
     header_file.close()
 
     # Copy asset folder 
-    copytree("../app_template/assets", folder_name + "/assets")
+    copytree(script_directory + "../app_template/assets", folder_name + "/assets")
 
 
 def installApp():
@@ -66,7 +68,7 @@ def installApp():
     print("install app {}".format(app_name))
 
     # Read app install callback 
-    app_install_cb_file = open("../apps.h", mode='r')
+    app_install_cb_file = open(script_directory + "../apps.h", mode='r')
     content_app_install_cb_file = app_install_cb_file.read()
     app_install_cb_file.close()
 
@@ -79,7 +81,7 @@ def installApp():
     content_app_install_cb_file = content_app_install_cb_file.replace(app_install_tag, "mooncake->installApp(new MOONCAKE::APPS::App{}_Packer);\n    {}".format(app_name.capitalize(), app_install_tag))
 
     # Write app install callback 
-    app_install_cb_file = open("../apps.h", mode='w+')
+    app_install_cb_file = open(script_directory + "../apps.h", mode='w+')
     app_install_cb_file.write(content_app_install_cb_file)
     app_install_cb_file.close()
 
